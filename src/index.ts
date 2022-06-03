@@ -79,9 +79,26 @@ async function canMessage(id: number) {
     }
 }
 
+function ordinal_suffix_of(i) {
+    // i copied from stack overflow, yeah yeah
+    var j = i % 10,
+        k = i % 100;
+    if (j == 1 && k != 11) {
+        return i + "st";
+    }
+    if (j == 2 && k != 12) {
+        return i + "nd";
+    }
+    if (j == 3 && k != 13) {
+        return i + "rd";
+    }
+    return i + "th";
+}
+
 async function sendMessages(data: FollowEntry[]) {
     let current: FollowEntry;
     let i = 0;
+    let totalMessaged = 0;
 
     async function pm() {
         try {
@@ -94,7 +111,8 @@ async function sendMessages(data: FollowEntry[]) {
             }
             if (current && (await canMessage(current.id))) {
                 const quote = await getQuote();
-                await message(current?.id, "Your daily quote", `${quote.content} -${quote.author}`);
+                await message(current?.id, "Your daily quote", `${quote.content} -${quote.author} you are the ${ordinal_suffix_of(totalMessaged)} to be messaged in queue.`);
+                totalMessaged++;
                 console.log(`messaged @${current?.name}`);
             } else {
                 i++;
