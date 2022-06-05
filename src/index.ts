@@ -208,6 +208,11 @@ PS: If you would like to be entered into the messaging program, please follow Th
 if you would like to contact me, you can talk to me on blue bird app with my blue bird social link.`,
             }),
         });
+
+        if (!response.ok) {
+            throw new Error(`${response.status} ${response.statusText}`);
+        }
+
         console.log("set about page");
 
         const data = await response.json();
