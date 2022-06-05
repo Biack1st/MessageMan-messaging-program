@@ -205,8 +205,7 @@ async function setAboutPage() {
 
 PS: If you would like to be entered into the messaging program, please follow TheMessageMan2022 on Roblox. Your messages must be on for this to work.
             
-if you would like to contact me, you can talk to me on blue bird app with my blue bird social link.
-            `,
+if you would like to contact me, you can talk to me on blue bird app with my blue bird social link.`,
             }),
         });
         console.log("set about page");
