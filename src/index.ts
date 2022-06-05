@@ -133,13 +133,22 @@ async function sendMessages(data: FollowEntry[]) {
 }
 
 async function getTotalMessages() {
-    const response = await fetch("https://privatemessages.roblox.com/v1/messages?pageNumber=1&pageSize=1&messageTab=Sent", {
-        headers: {
-            Cookie: `.ROBLOSECURITY=${token}`,
-        },
-    });
-    const data = await response.json();
-    return data.totalCollectionSize;
+    try {
+        const response = await fetch("https://privatemessages.roblox.com/v1/messages?pageNumber=1&pageSize=1&messageTab=Sent", {
+            headers: {
+                Cookie: `.ROBLOSECURITY=${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.totalCollectionSize;
+    } catch (e) {
+        console.log(`failed to get total messages for reason of: ${e.message}`);
+    }
 }
 
 async function getCsrfToken() {
@@ -150,13 +159,7 @@ async function getCsrfToken() {
             "Content-Type": "application/json",
         },
         body: JSON.stringify({
-            description: `
-                Hello, I'm TheMessageMan, I like to send messages to people :). I've currently sent ${0} messages to people.
-
-                PS: If you would like to be entered into the messaging program, please follow TheMessageMan2022 on Roblox. Your messages must be on for this to work.
-            
-                if you would like to contact me, you can talk to me on blue bird app with my blue bird social link.
-            `,
+            description: "joe mama fat",
         }),
     });
     if (response.status === 403) {
@@ -235,7 +238,7 @@ login().then(async () => {
     await setAboutPage();
     setInterval(async () => {
         await setAboutPage();
-    }, 45 * 1000);
+    }, 5 * 60 * 1000);
 
     await sendMessages(userFollowers);
 });
