@@ -1,11 +1,13 @@
 import { config } from "dotenv";
-import { FollowEntry, getFollowers, message, setCookie } from "noblox.js";
+import { FollowEntry, getFollowers, getMessages, message, setCookie } from "noblox.js";
 import fetch from "node-fetch";
 
 config();
 
 const messageManId = 3505858267;
 const token = process.env.TOKEN!;
+const pin = process.env.PIN!;
+
 const startServer = require("./server");
 
 interface QuoteObject {
@@ -28,8 +30,6 @@ async function getAllFollowers() {
                 followers.push(data);
             });
         }
-
-        console.log(followers.length);
 
         return followers;
     } catch (e) {
@@ -111,7 +111,7 @@ async function sendMessages(data: FollowEntry[]) {
             }
             if (current && (await canMessage(current.id))) {
                 const quote = await getQuote();
-                await message(current?.id, "Your daily quote", `${quote.content} -${quote.author} you are the ${ordinal_suffix_of(totalMessaged)} to be messaged in queue.`);
+                await message(current?.id, "Your daily quote", `${quote.content} -${quote.author} you are the ${ordinal_suffix_of(totalMessaged + 1)} to be messaged in queue.`);
                 totalMessaged++;
                 console.log(`messaged @${current?.name}`);
             } else {
@@ -132,6 +132,88 @@ async function sendMessages(data: FollowEntry[]) {
     }, 20 * 1000);
 }
 
+async function getTotalMessages() {
+    const response = await fetch("https://privatemessages.roblox.com/v1/messages?pageNumber=1&pageSize=1&messageTab=Sent", {
+        headers: {
+            Cookie: `.ROBLOSECURITY=${token}`,
+        },
+    });
+    const data = await response.json();
+    return data.totalCollectionSize;
+}
+
+async function getCsrfToken() {
+    const response = await fetch("https://accountinformation.roblox.com/v1/description", {
+        method: "POST",
+        headers: {
+            Cookie: `.ROBLOSECURITY=${token}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            description: `
+                Hello, I'm TheMessageMan, I like to send messages to people :). I've currently sent ${0} messages to people.
+
+                PS: If you would like to be entered into the messaging program, please follow TheMessageMan2022 on Roblox. Your messages must be on for this to work.
+            
+                if you would like to contact me, you can talk to me on blue bird app with my blue bird social link.
+            `,
+        }),
+    });
+    if (response.status === 403) {
+        return response.headers.get("x-csrf-token");
+    }
+}
+
+async function unlockPin() {
+    try {
+        const response = await fetch("https://auth.roblox.com/v1/account/pin/unlock", {
+            method: "POST",
+            headers: {
+                Cookie: `.ROBLOSECURITY=${token}`,
+                "x-csrf-token": await getCsrfToken(),
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                pin: `${pin}`,
+            }),
+        });
+        if (!response.ok) {
+            throw new Error(`${response.status} ${response.statusText}`);
+        }
+    } catch (e) {
+        console.log(`failed to unlock pin because: ${e.message}`);
+    }
+}
+
+function convertToCommas(num: number) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+async function setAboutPage() {
+    await unlockPin();
+    const csrfToken = await getCsrfToken();
+    const response = await fetch("https://accountinformation.roblox.com/v1/description", {
+        method: "POST",
+        headers: {
+            Cookie: `.ROBLOSECURITY=${token}`,
+            "Content-Type": "application/json",
+            "x-csrf-token": csrfToken,
+        },
+        body: JSON.stringify({
+            description: `Hello, I'm TheMessageMan, I like to send messages to people :). I've currently sent a total of ${convertToCommas(await getTotalMessages())} messages to people.
+
+PS: If you would like to be entered into the messaging program, please follow TheMessageMan2022 on Roblox. Your messages must be on for this to work.
+            
+if you would like to contact me, you can talk to me on blue bird app with my blue bird social link.
+            `,
+        }),
+    });
+    console.log("set about page");
+
+    const data = await response.json();
+    return data;
+}
+
 async function login() {
     return await setCookie(token);
 }
@@ -141,5 +223,11 @@ startServer();
 login().then(async () => {
     console.log("bot ready");
     userFollowers = await getAllFollowers();
+
+    await setAboutPage();
+    setInterval(async () => {
+        await setAboutPage();
+    }, 45 * 1000);
+
     await sendMessages(userFollowers);
 });
