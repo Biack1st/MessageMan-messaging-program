@@ -190,28 +190,32 @@ function convertToCommas(num: number) {
 }
 
 async function setAboutPage() {
-    await unlockPin();
-    const csrfToken = await getCsrfToken();
-    const response = await fetch("https://accountinformation.roblox.com/v1/description", {
-        method: "POST",
-        headers: {
-            Cookie: `.ROBLOSECURITY=${token}`,
-            "Content-Type": "application/json",
-            "x-csrf-token": csrfToken,
-        },
-        body: JSON.stringify({
-            description: `Hello, I'm TheMessageMan, I like to send messages to people :). I've currently sent a total of ${convertToCommas(await getTotalMessages())} messages to people.
+    try {
+        await unlockPin();
+        const csrfToken = await getCsrfToken();
+        const response = await fetch("https://accountinformation.roblox.com/v1/description", {
+            method: "POST",
+            headers: {
+                Cookie: `.ROBLOSECURITY=${token}`,
+                "Content-Type": "application/json",
+                "x-csrf-token": csrfToken,
+            },
+            body: JSON.stringify({
+                description: `Hello, I'm TheMessageMan, I like to send messages to people :). I've currently sent a total of ${convertToCommas(await getTotalMessages())} messages to people.
 
 PS: If you would like to be entered into the messaging program, please follow TheMessageMan2022 on Roblox. Your messages must be on for this to work.
             
 if you would like to contact me, you can talk to me on blue bird app with my blue bird social link.
             `,
-        }),
-    });
-    console.log("set about page");
+            }),
+        });
+        console.log("set about page");
 
-    const data = await response.json();
-    return data;
+        const data = await response.json();
+        return data;
+    } catch (e) {
+        console.log(`failed to set about page because: ${e.message}`);
+    }
 }
 
 async function login() {
